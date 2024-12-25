@@ -1,0 +1,37 @@
+Nik
+
+# Find a walls, and then face outwards and just keep trying to infect passers
+
+start:
+ifwall foundwall
+ifsame maybewall
+ifenemy s_infect
+hop
+go start
+
+maybewall:
+ifrandom foundwall
+go start
+
+foundwall:
+ifwall turnleft
+ifwall turnleft
+ifsame turnleft
+ifempty attackloop
+infect
+go foundwall
+
+attackloop:
+ifsame foundwall
+infect
+go attackloop
+
+turnleft:
+left
+ifrandom foundwall
+left
+go foundwall
+
+s_infect:
+infect
+go start

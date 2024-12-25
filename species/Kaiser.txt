@@ -1,0 +1,24 @@
+Kaiser
+
+start:
+ifenemy attack
+ifwall goright
+ifempty dohop
+ifsame goleft
+go start
+
+attack:
+infect
+go start
+
+goright:
+right
+go start
+
+dohop:
+hop
+go start
+
+goleft:
+left
+go start

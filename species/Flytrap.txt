@@ -1,0 +1,14 @@
+Flytrap
+
+# The flytrap sits in one place and spins.
+# It infects anything which appears in front.
+# Flytraps do well when they clump.
+
+start:
+ifenemy doinfect
+left
+go start
+
+doinfect:
+infect
+go start

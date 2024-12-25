@@ -1,0 +1,217 @@
+import java.awt.*;
+import java.util.Random;
+/**
+ * This class represents one creature in a Darwin simulation. Each creature is
+ * of a particular species and has a position and direction within the
+ * simulation world. In addition, each creature must remember its current
+ * position within its species program, which tells it which instruction to
+ * execute next. Lastly, creatures are responsible for drawing themselves in the
+ * graphical world map and updating the map appropriately as actions are taken.
+ */
+public class Creaturej {
+    /**
+     * Type of species of the creature instance.
+     */
+    private Species species;
+    /**
+     * Creature position in the world instance.
+     */
+    private Position position;
+    /**
+     * Direction of the species.
+     */
+    private Direction direction;
+    /**
+     * The index of the current instruction.
+     */
+    private int step;
+
+    /**
+     * Create a creature of the given species, within the given world, with the
+     * indicated starting position and direction.
+     */
+    public Creature(Species species, World world, Position pos, Direction dir) {
+        this.species = species;
+        this.direction = dir;
+        this.position = pos;
+        this.step = 0;
+        world.set(pos, this);
+    }
+
+    /**
+     * Get the current species of the creature.
+     * 
+     * @return The current creature species.
+     */
+    public Species species() {
+        return this.species;
+    }
+
+    /**
+     * Get the current direction of the creature.
+     * 
+     * @return The current creature direction.
+     */
+    public Direction direction() {
+        return this.direction;
+    }
+
+    /**
+     * Get the current position of the creature.
+     * 
+     * @return The current creature position.
+     */
+    public Position position() {
+        return this.position;
+    }
+
+
+    /**
+     * Set the species of the creature.
+     *
+     * @param species The type species to set
+     */
+    public void setSpecies(Species species) {
+        this.species = species;
+    }
+
+    /**
+     * Set the step of the creature.
+     *
+     * @param step The step, or in other words current instruction index, to set
+     */
+    public void setStep(int step) { this.step = step; }
+
+    
+    private boolean isAdjacentNullAndNotWall() {
+        if(Darwin.world.inBounds(this.position.getAdjacent(this.direction))) {
+            if(Darwin.world.get(this.position.getAdjacent(this.direction)) == null) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * Repeatedly execute instructions from the creature's program until one of
+     * the 'terminating' instructions (hop, left, right, or infect) is executed.
+     */
+    public void execute() {
+        Instruction currentInstruction = this.species.programStep(this.step);
+        //System.out.println(currentInstruction);
+        if(currentInstruction.getOpcode().acceptsLabel()){
+            switch(currentInstruction.getOpcode()) {
+                case LABEL:
+                    break;
+                case INFECT:
+                    if(!Darwin.world.inBounds(this.position.getAdjacent(this.direction))) {
+                        this.step++;
+                        return;
+                    }
+                    if(Darwin.world.get(this.position.getAdjacent(this.direction)) != null) {
+                        if(!Darwin.world.get(this.position.getAdjacent(this.direction))
+                                .species.equals(this.species)) {
+                            //call by reference
+                            Darwin.world.get(this.position.getAdjacent(this.direction)).
+                                    setSpecies(this.species);
+                            Darwin.world.get(this.position.getAdjacent(this.direction)).
+                                    setStep(0);
+                            if(currentInstruction.getLabel() != null) {
+                                Darwin.world.get(this.position.getAdjacent(this.direction)).
+                                        setStep(this.species.getLabelAddress(currentInstruction.getLabel()));
+                            }
+                            WorldMap.drawCreature(this);
+                            WorldMap.drawCreature(Darwin.world.get(this.position.getAdjacent(this.direction)));
+                            this.step++;
+                            return;
+                        }
+                    }
+                    this.step++;
+                    return;
+
+                case IFEMPTY:
+                    if(isAdjacentNullAndNotWall()) {
+                        //Jump to label and call again else bypass
+                        this.step = this.species.getLabelAddress(currentInstruction.getLabel())-1;
+                    }
+                    break;
+
+                case IFWALL:
+                    if(!Darwin.world.inBounds(this.position.getAdjacent(this.direction))) {
+                        //Jump to label and call again else bypass
+                        this.step = this.species.getLabelAddress(currentInstruction.getLabel())-1;
+                    }
+                    break;
+
+                case IFSAME:
+                    if(isAdjacentNullAndNotWall()) {
+                        break;
+                    }
+                    if(Darwin.world.get(this.position.getAdjacent(this.direction))
+                            .species.equals(this.species)) {
+                        //Jump to label and call again else bypass
+                        this.step = this.species.getLabelAddress(currentInstruction.getLabel())-1;
+                    }
+                    break;
+
+                case IFENEMY:
+                    if(!Darwin.world.inBounds(this.position.getAdjacent(this.direction))) {
+                        break;
+                    }
+                    if(Darwin.world.get(this.position.getAdjacent(this.direction)) == null) {
+                        break;
+                    }
+                    if(Darwin.world.get(this.position.getAdjacent(this.direction))
+                            .species != this.species) {
+                        //Jump to label and call again else bypass
+                        this.step = this.species.getLabelAddress(currentInstruction.getLabel())-1;
+                    }
+                    break;
+
+                case IFRANDOM:
+                    Random rand = new Random();
+                    if(rand.nextBoolean()) {
+                        this.step = this.species.getLabelAddress(currentInstruction.getLabel())-1;
+                    }
+                    break;
+
+                case GO:
+                    this.step = this.species.getLabelAddress(currentInstruction.getLabel())-1;
+                    break;
+            }
+            this.step++;
+            execute();
+
+        } else {
+            switch(currentInstruction.getOpcode()) {
+                case HOP:
+                    Position previousPosition = this.position;
+                    this.position = this.position.getAdjacent(this.direction);
+                    Darwin.world.set(this.position, this);
+                    Darwin.world.set(previousPosition, null);
+                    this.step++;
+                    WorldMap.drawMovedCreature(this, previousPosition);
+                    return;
+                case LEFT:
+                    this.direction = this.direction.left();
+                    this.step++;
+                    WorldMap.drawCreature(this);
+                    return;
+                case RIGHT:
+                    this.direction = this.direction.right();
+                    this.step++;
+                    WorldMap.drawCreature(this);
+            }
+        }
+    }
+
+    /**
+     * Tests the functionality of the Creature class.
+     */
+    public static void main(String[] args) {
+        World world = new World(15, 15);
+        Creature ceaser = new Creature(new Species("species/Kaiser.txt",
+                Color.getColor("black")), world, world.randomPosition(), Direction.random());
+        ceaser.execute();
+    }
+
+}

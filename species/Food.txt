@@ -1,0 +1,7 @@
+Food
+
+# Food just sits there and spins but doesn't infect anyone.
+
+start:
+left
+go start

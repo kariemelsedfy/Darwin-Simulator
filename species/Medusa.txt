@@ -1,0 +1,30 @@
+Medusa
+
+# The medusa is a modified rover that turns
+# enemies to stone. Useful for testing that
+# the infect instruction works properly.
+
+start:
+ifenemy doinfect
+ifwall randomturn
+ifsame randomturn
+hop
+go start
+
+# randomly turn left or right
+randomturn:
+ifrandom turnright
+left
+go start
+
+turnright:
+right
+go start
+
+doinfect:
+infect stone
+go start
+
+stone:
+infect
+go stone

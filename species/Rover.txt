@@ -1,0 +1,25 @@
+Rover
+
+# The rover infects enemies and randomly
+# turns when it encounters an obstacle.
+
+start:
+ifenemy doinfect
+ifwall randomturn
+ifsame randomturn
+hop
+go start
+
+# randomly turn left or right
+randomturn:
+ifrandom turnright
+left
+go start
+
+turnright:
+right
+go start
+
+doinfect:
+infect
+go start
